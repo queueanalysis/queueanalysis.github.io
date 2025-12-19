@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Queueing Theory DST</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script async id="mathjax" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <h1>Queueing Models Analyzer</h1>
+        <p class="lede">
+          Evaluate steady-state metrics for the required Kendall models with validated inputs,
+          instant feedback, and clear outputs. All calculations run locally in your browser.
+        </p>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <header class="card-head">
+          <div>
+            <p class="eyebrow">Input</p>
+            <h2>Select model & parameters</h2>
+          </div>
+        </header>
+
+        <div class="field">
+          <label for="modelSelect">Queuing model</label>
+          <select id="modelSelect">
+            <option value="">Choose a model</option>
+          </select>
+          <div class="hint">Required. Adjusts parameter fields automatically.</div>
+        </div>
+
+        <div id="paramsContainer" class="params"></div>
+
+        <div class="actions">
+          <button id="computeBtn" class="primary">Compute</button>
+          <button id="resetBtn" class="ghost">Reset</button>
+        </div>
+
+        <div id="validationSummary" class="note hidden"></div>
+      </section>
+
+      <section class="card results">
+        <header class="card-head">
+          <div>
+            <p class="eyebrow">Output</p>
+            <h2>Results</h2>
+          </div>
+          <div id="statusBadge" class="badge neutral">Waiting for inputs</div>
+        </header>
+
+        <div class="actions">
+          <button id="copyResultsBtn" class="ghost">Copy results</button>
+          <button id="pdfResultsBtn" class="ghost">Export PDF</button>
+        </div>
+
+        <div id="resultsSummary" class="results-grid empty">
+          <p class="muted">Select a model, enter parameters, then click Compute.</p>
+        </div>
+
+        <div id="pnList" class="pn-list hidden"></div>
+      </section>
+    </main>
+
+    <section class="card compare">
+      <header class="card-head">
+        <div>
+          <p class="eyebrow">Compare</p>
+          <h2>Model comparison</h2>
+        </div>
+        <div class="actions">
+          <button id="saveSlotA" class="ghost">Set as Model A</button>
+          <button id="saveSlotB" class="ghost">Set as Model B</button>
+          <button id="copyCompareBtn" class="ghost hidden">Copy results</button>
+          <button id="pdfCompareBtn" class="ghost hidden">Export PDF</button>
+          <button id="downloadGraphBtn" class="ghost hidden">Download graph</button>
+        </div>
+      </header>
+      <p class="muted latex-label">Compute a model, then assign it to A or B. Compare \(L_s, L_q, W_s, W_q, \bar{c}\).</p>
+      <div class="compare-status" id="compareStatus">Awaiting selections.</div>
+      <canvas id="compareChart" height="200"></canvas>
+    </section>
+
+    <section class="card info">
+      <header class="card-head">
+        <div>
+          <p class="eyebrow">Help</p>
+          <h2>Usage tips</h2>
+        </div>
+      </header>
+      <ul class="bullets">
+        <li>Select a queuing model; the required parameters render automatically.</li>
+        <li>Inputs are validated (required, numeric, positive/integers). Fix highlighted fields before computing.</li>
+        <li>Click Compute to get p0, pn (n ≤ 20), and for finite capacity pN, λ<sub>eff</sub>, λ<sub>lost</sub>, plus Ls, Lq, Ws, Wq, c̄.</li>
+        <li>Use the “i” button on a metric to view its formula reference.</li>
+        <li>Use Copy results or Export PDF to share the current computation (works with one model).</li>
+        <li>To compare: compute a model, click “Set as Model A”; compute another model, click “Set as Model B” to see both on the chart (Ls/Lq/Ws/Wq/c̄).</li>
+        <li>Warnings indicate instability (ρ ≥ 1) or very small λ<sub>eff</sub>. Reset clears inputs and outputs.</li>
+      </ul>
+
+      <br><br>
+      <h2>What is Queuing Theory?</h2>
+      <p class="muted">
+        Queuing theory is a mathematical modeling tool used to analyze waiting lines, or queues. It is used to predict the length of queues, the amount of time customers spend waiting, and the number of servers needed to provide a given level of service.
+      </p>
+
+      <br><br>
+      <h2>Queuing Theory Use Cases</h2>
+      <p class="muted">
+        Queuing theory is a powerful tool that can be used to improve the efficiency and effectiveness of a wide variety of systems. By understanding how queues work, businesses can make better decisions about staffing, scheduling, and inventory management. This can lead to reduced waiting times for customers, improved customer satisfaction, and increased profits.
+      </p>
+      <ul class="bullets">
+        <li>Waiting in line at the grocery store. The grocery store is a classic example of a queuing system. Customers arrive at the store and wait in line to be checked out. The number of customers in line, the length of time they wait, and the number of checkout lanes open all affect the efficiency of the system.</li>
+        <li>Calling a customer service line. When you call a customer service line, you are joining a queue of other callers. The length of time you wait on hold depends on the number of callers in the queue, the number of customer service representatives available, and the average time it takes to handle a call.</li>
+      </ul>
+
+      <br><br>
+      <h2>Queuing Theory Models (Kendall Notation)</h2>
+      <p class="muted">
+        A model is written as <code>(a / b / c) : (d / e / f)</code> where:
+      </p>
+      <ul class="bullets">
+        <li><code>a</code>: arrival distribution (e.g., M for Poisson/Markovian)</li>
+        <li><code>b</code>: service-time distribution (e.g., M for exponential, G for general)</li>
+        <li><code>c</code>: number of parallel servers</li>
+        <li><code>d</code>: queue discipline (e.g., FIFO/GD = general discipline)</li>
+        <li><code>e</code>: system capacity (finite or ∞, includes in-queue plus in-service)</li>
+        <li><code>f</code>: size of the calling population/source (finite or ∞)</li>
+      </ul>
+    </section>
+  </div>
+
+  <div id="formulaModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h3 id="formulaTitle">Formula</h3>
+        <button id="closeFormula" class="ghost small">Close</button>
+      </div>
+      <div id="formulaBody" class="formula-body"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
+
