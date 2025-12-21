@@ -1,18 +1,17 @@
 :root {
   color-scheme: light;
-  /* Navy-centered palette */
   --bg: #0b1220;
   --panel: #0f1b30;
   --card: #111f38;
   --border: #1c2c4a;
-  --accent: #2b4c7e;         /* primary navy */
+  --accent: #2b4c7e;
   --accent-strong: #223b63;
-  --accent-alt: #1f3a5f;     /* secondary navy */
+  --accent-alt: #1f3a5f;
   --text: #e5e9f2;
   --muted: #9aa7c2;
-  --success: #3d5a8a;        /* navy variant */
-  --warn: #344b72;           /* navy variant */
-  --error: #2a3a59;          /* navy variant */
+  --success: #3d5a8a;
+  --warn: #344b72;
+  --error: #2a3a59;
   --shadow: 0 20px 60px rgba(0,0,0,0.35);
 }
 
@@ -406,8 +405,19 @@ button:active {
 .compare-status {
   margin: 8px 0;
   color: var(--muted);
-  font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
-  font-style: italic;
+}
+
+.footer {
+  margin-top: 48px;
+  padding: 24px 16px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.footer-text {
+  margin: 0;
+  font-size: 14px;
 }
 
 @media (max-width: 720px) {
@@ -418,6 +428,15 @@ button:active {
 
   .hero-actions {
     width: 100%;
+  }
+
+  .footer {
+    margin-top: 32px;
+    padding: 20px 16px;
+  }
+
+  .footer-text {
+    font-size: 12px;
   }
 }
 

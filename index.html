@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Queueing Theory DST</title>
   <link rel="stylesheet" href="./styles.css">
-  <!-- Critical inline fallback styles for GitHub Pages (ensures layout if external CSS fails to load) -->
   <style>
     :root {
       color-scheme: light;
@@ -50,7 +49,7 @@
         <h1>Queueing Models Analyzer</h1>
         <p class="lede">
           Evaluate steady-state metrics for the required Kendall models with validated inputs,
-          instant feedback, and clear outputs. All calculations run locally in your browser.
+          instant feedback, and clear outputs.
         </p>
       </div>
     </header>
@@ -93,7 +92,7 @@
 
         <div class="actions">
           <button id="copyResultsBtn" class="ghost">Copy results</button>
-          <button id="pdfResultsBtn" class="ghost">Export PDF</button>
+          <button id="pdfResultsBtn" class="ghost">Export as PDF</button>
         </div>
 
         <div id="resultsSummary" class="results-grid empty">
@@ -114,11 +113,11 @@
           <button id="saveSlotA" class="ghost">Set as Model A</button>
           <button id="saveSlotB" class="ghost">Set as Model B</button>
           <button id="copyCompareBtn" class="ghost hidden">Copy results</button>
-          <button id="pdfCompareBtn" class="ghost hidden">Export PDF</button>
+          <button id="pdfCompareBtn" class="ghost hidden">Export as PDF</button>
           <button id="downloadGraphBtn" class="ghost hidden">Download graph</button>
         </div>
       </header>
-      <p class="muted latex-label">Compute a model, then assign it to A or B. Compare \(L_s, L_q, W_s, W_q, \bar{c}\).</p>
+      <p class="muted">Compute a model, then assign it to A or B. Compare \(L_s\), \(L_q\), \(W_s\), \(W_q\), \(\bar{c}\).</p>
       <div class="compare-status" id="compareStatus">Awaiting selections.</div>
       <canvas id="compareChart" height="200"></canvas>
     </section>
@@ -151,6 +150,7 @@
       <p class="muted">
         Queuing theory is a powerful tool that can be used to improve the efficiency and effectiveness of a wide variety of systems. By understanding how queues work, businesses can make better decisions about staffing, scheduling, and inventory management. This can lead to reduced waiting times for customers, improved customer satisfaction, and increased profits.
       </p>
+      <p class="muted">Examples of queuing theory:</p>
       <ul class="bullets">
         <li>Waiting in line at the grocery store. The grocery store is a classic example of a queuing system. Customers arrive at the store and wait in line to be checked out. The number of customers in line, the length of time they wait, and the number of checkout lanes open all affect the efficiency of the system.</li>
         <li>Calling a customer service line. When you call a customer service line, you are joining a queue of other callers. The length of time you wait on hold depends on the number of callers in the queue, the number of customer service representatives available, and the average time it takes to handle a call.</li>
@@ -181,6 +181,10 @@
       <div id="formulaBody" class="formula-body"></div>
     </div>
   </div>
+
+  <footer class="footer">
+    <p class="footer-text">Copyright © 2025</p>
+  </footer>
 
   <script type="module" src="./app.js"></script>
 </body>

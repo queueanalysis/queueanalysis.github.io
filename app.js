@@ -41,7 +41,7 @@ const models = [
   },
   {
     id: "mminf",
-    label: "M/M/∞:GD/∞/∞ (self-service)",
+    label: "M/M/∞:GD/∞/∞",
     params: [
       param("lambda", "Arrival rate λ", { positive: true }),
       param("mu", "Service rate μ", { positive: true })
@@ -50,7 +50,7 @@ const models = [
   },
   {
     id: "mmr_repair",
-    label: "M/M/R:GD/K/K (repair-shop)",
+    label: "M/M/R:GD/K/K",
     params: [
       param("lambda", "Failure/arrival rate λ", { positive: true }),
       param("mu", "Repair rate μ", { positive: true }),
@@ -61,7 +61,7 @@ const models = [
   },
   {
     id: "mg1_pk",
-    label: "M/G/1:GD/∞/∞ (P-K)",
+    label: "M/G/1:GD/∞/∞",
     params: [
       param("lambda", "Arrival rate λ", { positive: true }),
       param("meanService", "E{t} (service mean)", { positive: true }),
@@ -98,10 +98,20 @@ let lastResult = null;
 const compareSlots = { A: null, B: null };
 let compareChart = null;
 
+/**
+ * Creates a parameter definition object for queueing model inputs.
+ * @param {string} id - Unique identifier for the parameter
+ * @param {string} label - Display label for the parameter
+ * @param {Object} rules - Validation rules (positive, integer, min, etc.)
+ * @returns {Object} Parameter definition object
+ */
 function param(id, label, rules = {}) {
   return { id, label, rules };
 }
 
+/**
+ * Populates the model selection dropdown with available queueing models.
+ */
 function renderModelOptions() {
   models.forEach((m) => {
     const opt = document.createElement("option");
@@ -111,6 +121,10 @@ function renderModelOptions() {
   });
 }
 
+/**
+ * Renders input fields for the selected model's parameters.
+ * @param {string} modelId - ID of the selected model
+ */
 function renderParams(modelId) {
   paramsContainer.innerHTML = "";
   if (!modelId) return;
@@ -127,6 +141,11 @@ function renderParams(modelId) {
   });
 }
 
+/**
+ * Generates a hint message based on validation rules.
+ * @param {Object} rules - Validation rules object
+ * @returns {string} Hint message for the input field
+ */
 function hintForRule(rules) {
   if (rules.integer) return "Required. Integer.";
   if (rules.positive) return "Required. > 0.";
@@ -134,6 +153,11 @@ function hintForRule(rules) {
   return "Required.";
 }
 
+/**
+ * Reads and validates input values from the parameter fields.
+ * @param {Object} model - Model object containing parameter definitions
+ * @returns {Object} Object containing validated values and error messages
+ */
 function readInputs(model) {
   const values = {};
   const errors = [];
@@ -170,6 +194,11 @@ function readInputs(model) {
   return { values, errors };
 }
 
+/**
+ * Displays validation messages to the user.
+ * @param {string|Array<string>} messages - Validation message(s) to display
+ * @param {string} type - Message type: "warn" or "error"
+ */
 function showValidation(messages, type = "warn") {
   if (!messages || messages.length === 0) {
     validationSummary.classList.add("hidden");
@@ -179,11 +208,20 @@ function showValidation(messages, type = "warn") {
   validationSummary.innerHTML = Array.isArray(messages) ? messages.join("<br>") : messages;
 }
 
+/**
+ * Updates the status badge with text and styling level.
+ * @param {string} text - Status text to display
+ * @param {string} level - Badge level: "neutral", "good", "warn", or "error"
+ */
 function setStatusBadge(text, level = "neutral") {
   statusBadge.textContent = text;
   statusBadge.className = `badge ${level}`;
 }
 
+/**
+ * Renders computation results including metrics and probability distributions.
+ * @param {Object} result - Computation result object with metrics and pn array
+ */
 function renderResults(result) {
   resultsSummary.classList.remove("empty");
   const metrics = [
@@ -225,8 +263,10 @@ function renderResults(result) {
       `
       )
       .join("");
-    pnList.innerHTML = `<h3>pn (n ≤ 20)</h3><div class="pn-grid">${items}</div>`;
-    if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([pnList]).catch(() => {});
+    pnList.innerHTML = `<h3>\\(p_n\\) (\\(n \\leq 20\\))</h3><div class="pn-grid">${items}</div>`;
+    if (window.MathJax?.typesetPromise) {
+      window.MathJax.typesetPromise([pnList]).catch(() => {});
+    }
   } else {
     pnList.classList.add("hidden");
     pnList.innerHTML = "";
@@ -239,6 +279,9 @@ function renderResults(result) {
   }
 }
 
+/**
+ * Resets all inputs, outputs, and comparison data to initial state.
+ */
 function resetAll() {
   modelSelect.value = "";
   paramsContainer.innerHTML = "";
@@ -256,6 +299,9 @@ function resetAll() {
   toggleCompareActions();
 }
 
+/**
+ * Handles the compute button click: validates inputs and computes queueing metrics.
+ */
 function handleCompute() {
   const modelId = modelSelect.value;
   if (!modelId) {
@@ -298,11 +344,14 @@ resultsSummary.addEventListener("click", (e) => {
   if (!btn || !lastResult) return;
   const metric = btn.getAttribute("data-metric");
   const formula = getFormula(metric, lastResult.modelId);
-  formulaTitle.textContent = `${metric} formula`;
+  const metricLatex = metric === "lambdaEff" ? "\\lambda_{eff}" : 
+                       metric === "lambdaLost" ? "\\lambda_{lost}" : 
+                       metric === "cBar" ? "\\bar{c}" : metric;
+  formulaTitle.innerHTML = `\\(${metricLatex}\\) formula`;
   formulaBody.innerHTML = formula;
   formulaModal.classList.remove("hidden");
   if (window.MathJax && window.MathJax.typesetPromise) {
-    window.MathJax.typesetPromise([formulaBody]).catch(() => {});
+    window.MathJax.typesetPromise([formulaTitle, formulaBody]).catch(() => {});
   }
 });
 
@@ -409,7 +458,11 @@ downloadGraphBtn?.addEventListener("click", downloadCompareGraph);
 renderModelOptions();
 updateCompareStatus();
 
-// ---------- Formatting helpers ----------
+/**
+ * Formats a number for display, handling special cases like null, infinity, and scientific notation.
+ * @param {number|null|undefined} val - Value to format
+ * @returns {string} Formatted number string
+ */
 function formatNumber(val) {
   if (val === null || val === undefined) return "—";
   if (!Number.isFinite(val)) return "∞";
@@ -418,12 +471,22 @@ function formatNumber(val) {
   return val.toFixed(4);
 }
 
+/**
+ * Formats a probability value with 6 decimal places.
+ * @param {number|null|undefined} val - Probability value to format
+ * @returns {string} Formatted probability string
+ */
 function formatProbability(val) {
   if (val === null || val === undefined) return "—";
   if (!Number.isFinite(val)) return "∞";
   return val.toFixed(6);
 }
 
+/**
+ * Computes the factorial of a non-negative integer.
+ * @param {number} n - Non-negative integer
+ * @returns {number} Factorial of n, or NaN if n < 0
+ */
 function factorial(n) {
   if (n < 0) return NaN;
   let res = 1;
@@ -431,12 +494,24 @@ function factorial(n) {
   return res;
 }
 
+/**
+ * Computes the sum of a geometric series: 1 + r + r² + ... + r^(terms-1).
+ * @param {number} r - Common ratio
+ * @param {number} terms - Number of terms
+ * @returns {number} Sum of the geometric series
+ */
 function geometricSum(r, terms) {
   if (terms <= 0) return 0;
   if (Math.abs(r - 1) < 1e-9) return terms;
   return (1 - r ** terms) / (1 - r);
 }
 
+/**
+ * Computes the binomial coefficient C(n, k) = n! / (k! * (n-k)!).
+ * @param {number} n - Total number of items
+ * @param {number} k - Number of items to choose
+ * @returns {number} Binomial coefficient
+ */
 function combination(n, k) {
   if (k < 0 || k > n) return 0;
   if (k === 0 || k === n) return 1;
@@ -450,6 +525,13 @@ function combination(n, k) {
   return num / den;
 }
 
+/**
+ * Computes geometric probability distribution p_n = p0 * ρ^n for n = 0 to maxN.
+ * @param {number} p0 - Probability of zero customers in system
+ * @param {number} rho - Traffic intensity (utilization)
+ * @param {number} maxN - Maximum n value to compute (default: 20)
+ * @returns {Array<Object>} Array of {n, value} objects
+ */
 function computePnGeometric(p0, rho, maxN = 20) {
   const pn = [];
   for (let n = 0; n <= maxN; n++) {
@@ -458,7 +540,13 @@ function computePnGeometric(p0, rho, maxN = 20) {
   return pn;
 }
 
-// ---------- Queue calculators ----------
+/**
+ * Computes steady-state metrics for M/M/1:GD/∞/∞ queueing model.
+ * @param {Object} params - Model parameters
+ * @param {number} params.lambda - Arrival rate
+ * @param {number} params.mu - Service rate
+ * @returns {Object} Computation results with metrics, warnings, and errors
+ */
 function computeMm1Infinite({ lambda, mu }) {
   const rho = lambda / mu;
   const errors = [];
@@ -491,6 +579,14 @@ function computeMm1Infinite({ lambda, mu }) {
   };
 }
 
+/**
+ * Computes steady-state metrics for M/M/1:GD/N/∞ queueing model (finite capacity).
+ * @param {Object} params - Model parameters
+ * @param {number} params.lambda - Arrival rate
+ * @param {number} params.mu - Service rate
+ * @param {number} params.N - System capacity
+ * @returns {Object} Computation results with metrics, warnings, and errors
+ */
 function computeMm1Finite({ lambda, mu, N }) {
   const rho = lambda / mu;
   const eps = 1e-9;
@@ -538,6 +634,14 @@ function computeMm1Finite({ lambda, mu, N }) {
   };
 }
 
+/**
+ * Computes steady-state metrics for M/M/c:GD/∞/∞ queueing model (multiple servers, infinite capacity).
+ * @param {Object} params - Model parameters
+ * @param {number} params.lambda - Arrival rate
+ * @param {number} params.mu - Service rate per server
+ * @param {number} params.c - Number of parallel servers
+ * @returns {Object} Computation results with metrics, warnings, and errors
+ */
 function computeMmcInfinite({ lambda, mu, c }) {
   const a = lambda / mu;
   const rho = lambda / (c * mu);
@@ -583,6 +687,15 @@ function computeMmcInfinite({ lambda, mu, c }) {
   };
 }
 
+/**
+ * Computes steady-state metrics for M/M/c:GD/N/∞ queueing model (multiple servers, finite capacity).
+ * @param {Object} params - Model parameters
+ * @param {number} params.lambda - Arrival rate
+ * @param {number} params.mu - Service rate per server
+ * @param {number} params.c - Number of parallel servers
+ * @param {number} params.N - System capacity (must be ≥ c)
+ * @returns {Object} Computation results with metrics, warnings, and errors
+ */
 function computeMmcFinite({ lambda, mu, c, N }) {
   const errors = [];
   const warnings = [];
@@ -590,9 +703,8 @@ function computeMmcFinite({ lambda, mu, c, N }) {
     errors.push("Capacity N must be ≥ c.");
   }
   const a = lambda / mu;
-  const rho = a / c; // λ / (cμ)
+  const rho = a / c;
 
-  // p0 via explicit finite sum from the provided formula
   let sum = 0;
   for (let n = 0; n < c; n++) sum += a ** n / factorial(n);
   for (let n = c; n <= N; n++) sum += a ** n / (factorial(c) * c ** (n - c));
@@ -651,6 +763,13 @@ function computeMmcFinite({ lambda, mu, c, N }) {
   };
 }
 
+/**
+ * Computes steady-state metrics for M/M/∞:GD/∞/∞ queueing model (infinite servers, self-service).
+ * @param {Object} params - Model parameters
+ * @param {number} params.lambda - Arrival rate
+ * @param {number} params.mu - Service rate
+ * @returns {Object} Computation results with metrics, warnings, and errors
+ */
 function computeMminf({ lambda, mu }) {
   const a = lambda / mu;
   const p0 = Math.exp(-a);
@@ -676,10 +795,18 @@ function computeMminf({ lambda, mu }) {
   };
 }
 
+/**
+ * Computes steady-state metrics for M/M/R:GD/K/K queueing model (finite-source repair shop).
+ * @param {Object} params - Model parameters
+ * @param {number} params.lambda - Failure/arrival rate
+ * @param {number} params.mu - Repair rate per server
+ * @param {number} params.R - Number of repair servers
+ * @param {number} params.K - Population size (total units)
+ * @returns {Object} Computation results with metrics, warnings, and errors
+ */
 function computeMmrRepair({ lambda, mu, R, K }) {
   const warnings = [];
   const errors = [];
-  // R = number of repair servers, K = finite population size
   const rho = lambda / mu;
   const pnRaw = [];
   for (let n = 0; n <= K; n++) {
@@ -696,7 +823,6 @@ function computeMmrRepair({ lambda, mu, R, K }) {
     pn.push({ n, value: p0 * pnRaw[n] });
   }
 
-  // Metrics
   let Ls = 0;
   let busy = 0;
   let Lq = 0;
@@ -727,6 +853,14 @@ function computeMmrRepair({ lambda, mu, R, K }) {
   };
 }
 
+/**
+ * Computes steady-state metrics for M/G/1:GD/∞/∞ queueing model using Pollaczek-Khinchine formula.
+ * @param {Object} params - Model parameters
+ * @param {number} params.lambda - Arrival rate
+ * @param {number} params.meanService - Expected service time E{t}
+ * @param {number} params.varService - Variance of service time Var{t}
+ * @returns {Object} Computation results with metrics, warnings, and errors
+ */
 function computeMg1Pk({ lambda, meanService, varService }) {
   const warnings = ["pn uses geometric approximation because full service-time distribution is not provided."];
   const errors = [];
@@ -756,10 +890,17 @@ function computeMg1Pk({ lambda, meanService, varService }) {
   };
 }
 
-// ---------- Formula helpers ----------
+/**
+ * Retrieves the LaTeX formula for a given metric and model.
+ * @param {string} metric - Metric identifier (p0, pN, Ls, Lq, Ws, Wq, cBar, lambdaEff, lambdaLost)
+ * @param {string} modelId - Model identifier
+ * @returns {string} LaTeX formula wrapped in MathJax delimiters
+ */
 function getFormula(metric, modelId) {
   const m = modelId;
   const mml = (s) => `$$${s}$$`;
+  if (metric === "λeff" || metric === "lambdaEff") metric = "lambdaEff";
+  if (metric === "λlost" || metric === "lambdaLost") metric = "lambdaLost";
   switch (metric) {
     case "p0":
       if (m === "mm1_inf") return mml("p_0 = 1 - \\rho,\\; \\rho = \\lambda/\\mu < 1");
@@ -833,6 +974,10 @@ function getFormula(metric, modelId) {
   return mml("Formula not available.");
 }
 
+/**
+ * Fallback method to copy text to clipboard when Clipboard API is unavailable.
+ * @param {string} text - Text to copy
+ */
 function fallbackCopy(text) {
   const ta = document.createElement("textarea");
   ta.value = text;
@@ -849,10 +994,20 @@ function fallbackCopy(text) {
   document.body.removeChild(ta);
 }
 
+/**
+ * Gets the currently active result (last computed or from comparison slots).
+ * @returns {Object|null} Active result object or null
+ */
 function getActiveResult() {
   return lastResult || compareSlots.B || compareSlots.A;
 }
 
+/**
+ * Splits an array into chunks of specified size.
+ * @param {Array} arr - Array to chunk
+ * @param {number} size - Chunk size
+ * @returns {Array<Array>} Array of chunks
+ */
 function chunkArray(arr, size) {
   const res = [];
   for (let i = 0; i < arr.length; i += size) {
@@ -861,7 +1016,10 @@ function chunkArray(arr, size) {
   return res;
 }
 
-// ---------- Compare export/copy/download ----------
+/**
+ * Ensures both Model A and Model B are set for comparison.
+ * @returns {Object|null} Object with models a and b, or null if not both set
+ */
 function ensureBothModels() {
   const a = compareSlots.A;
   const b = compareSlots.B;
@@ -872,6 +1030,9 @@ function ensureBothModels() {
   return { a, b };
 }
 
+/**
+ * Copies comparison results (Model A vs Model B) to clipboard.
+ */
 function copyCompareResults() {
   const models = ensureBothModels();
   if (!models) return;
@@ -890,6 +1051,9 @@ function copyCompareResults() {
   }
 }
 
+/**
+ * Exports comparison results as PDF by opening print dialog.
+ */
 function exportComparePdf() {
   const models = ensureBothModels();
   if (!models) return;
@@ -921,6 +1085,9 @@ function exportComparePdf() {
   }
 }
 
+/**
+ * Downloads the comparison chart as a PNG image.
+ */
 function downloadCompareGraph() {
   const models = ensureBothModels();
   if (!models) return;
@@ -931,7 +1098,10 @@ function downloadCompareGraph() {
   link.click();
 }
 
-// ---------- Compare handling ----------
+/**
+ * Saves the last computed result to a comparison slot (A or B).
+ * @param {string} slot - Slot identifier: "A" or "B"
+ */
 function saveCompareSlot(slot) {
   if (!lastResult) return showValidation([`Compute first, then set ${slot}.`], "warn");
   compareSlots[slot] = lastResult;
@@ -940,16 +1110,25 @@ function saveCompareSlot(slot) {
   toggleCompareActions();
 }
 
+/**
+ * Updates the comparison status display with current Model A and B labels.
+ */
 function updateCompareStatus() {
   const a = compareSlots.A ? compareSlots.A.modelLabel : "—";
   const b = compareSlots.B ? compareSlots.B.modelLabel : "—";
   if (compareStatus) {
-    const latex = (text) => text;
-    compareStatus.innerHTML = `Model A: \\(${latex(a)}\\) | Model B: \\(${latex(b)}\\)`;
-    if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([compareStatus]).catch(() => {});
+    const aLatex = a === "—" ? "—" : `\\(${a}\\)`;
+    const bLatex = b === "—" ? "—" : `\\(${b}\\)`;
+    compareStatus.innerHTML = `Model A: ${aLatex} | Model B: ${bLatex}`;
+    if (window.MathJax?.typesetPromise) {
+      window.MathJax.typesetPromise([compareStatus]).catch(() => {});
+    }
   }
 }
 
+/**
+ * Renders a bar chart comparing metrics between Model A and Model B.
+ */
 function renderCompareChart() {
   if (!compareCanvas) return;
   const a = compareSlots.A;
@@ -1000,6 +1179,9 @@ function renderCompareChart() {
   toggleCompareActions();
 }
 
+/**
+ * Destroys and clears the comparison chart.
+ */
 function clearCompareChart() {
   if (compareChart) {
     compareChart.destroy();
@@ -1007,6 +1189,9 @@ function clearCompareChart() {
   }
 }
 
+/**
+ * Shows or hides comparison action buttons based on whether both models are set.
+ */
 function toggleCompareActions() {
   const hasBoth = !!(compareSlots.A && compareSlots.B);
   [copyCompareBtn, pdfCompareBtn, downloadGraphBtn].forEach((btn) => {
@@ -1016,6 +1201,11 @@ function toggleCompareActions() {
   });
 }
 
+/**
+ * Gets a CSS custom property value from the document root.
+ * @param {string} name - CSS variable name (e.g., "--accent")
+ * @returns {string} CSS variable value or empty string
+ */
 function getCssVar(name) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name);
   return v ? v.trim() : "";
