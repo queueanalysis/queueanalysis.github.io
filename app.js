@@ -943,20 +943,20 @@ function getFormula(metric, modelId) {
       break;
     case "Ws":
       if (m === "mm1_inf") return mml("W_s = \\frac{1}{\\mu - \\lambda}");
-      if (m === "mm1_n") return mml("W_s = L_s / \\lambda_{eff}");
+      if (m === "mm1_n") return mml("W_s = \\frac{L_s}{\\lambda(1-p_N)}");
       if (m === "mmc_inf") return mml("W_s = W_q + \\frac{1}{\\mu}");
-      if (m === "mmc_n") return mml("W_s = L_s / \\lambda_{eff}");
+      if (m === "mmc_n") return mml("W_s = \\frac{L_s}{\\lambda(1-p_N)}");
       if (m === "mminf") return mml("W_s = 1/\\mu");
-      if (m === "mmr_repair") return mml("W_s = L_s / \\lambda_{eff}");
+      if (m === "mmr_repair") return mml("W_s = \\frac{L_s}{\\lambda(K-L_s)}");
       if (m === "mg1_pk") return mml("W_s = W_q + E\\{t\\}");
       break;
     case "Wq":
       if (m === "mm1_inf") return mml("W_q = \\frac{\\lambda}{\\mu(\\mu-\\lambda)}");
-      if (m === "mm1_n") return mml("W_q = L_q / \\lambda_{eff}");
+      if (m === "mm1_n") return mml("W_q = \\frac{L_q}{\\lambda(1-p_N)}");
       if (m === "mmc_inf") return mml("W_q = L_q / \\lambda");
-      if (m === "mmc_n") return mml("W_q = L_q / \\lambda_{eff}");
+      if (m === "mmc_n") return mml("W_q = \\frac{L_q}{\\lambda(1-p_N)}");
       if (m === "mminf") return mml("W_q = 0");
-      if (m === "mmr_repair") return mml("W_q = L_q / \\lambda_{eff}");
+      if (m === "mmr_repair") return mml("W_q = \\frac{L_q}{\\lambda(K-L_s)}");
       if (m === "mg1_pk") return mml("W_q = L_q / \\lambda");
       break;
     case "c̄":
