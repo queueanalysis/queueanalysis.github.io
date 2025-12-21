@@ -1065,7 +1065,7 @@ function exportComparePdf() {
   ];
   const rows = metrics.map(([k, label]) => `<tr><td>${label}</td><td>${formatNumber(a.result[k])}</td><td>${formatNumber(b.result[k])}</td></tr>`).join("");
   w.document.write(`
-    <html><head><title>Queuing Models Comparison</title>
+    <html><head><title>Queuing Model Comparison</title>
     <style>
       body { font-family: Arial, sans-serif; padding: 16px; }
       table { border-collapse: collapse; width: 100%; margin-top: 10px; }
@@ -1073,7 +1073,7 @@ function exportComparePdf() {
       h1, h2 { margin: 0 0 8px; }
     </style>
     </head><body>
-    <h1>Queuing Models Comparison</h1>
+    <h1>Queuing Model Comparison</h1>
     <table><thead><tr><th>Metric</th><th>${a.modelLabel}</th><th>${b.modelLabel}</th></tr></thead><tbody>${rows}</tbody></table>
     </body></html>
   `);
