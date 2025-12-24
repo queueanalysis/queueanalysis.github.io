@@ -865,6 +865,7 @@ function computeMmrRepair({ lambda, mu, R, K }) {
  * @returns {Object} Computation results with metrics, warnings, and errors
  */
 function computeMg1Pk({ lambda, meanService, varService }) {
+  const warnings = [];
   const errors = [];
   const rho = lambda * meanService;
   if (rho >= 1) errors.push("System unstable (ρ ≥ 1).");
