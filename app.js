@@ -730,16 +730,16 @@ function computeMmcFinite({ lambda, mu, c, N }) {
     Ls += n * prob;
   }
 
-  let busyMean = 0;
-  for (let n = 0; n <= N; n++) {
+  let Lq = 0;
+  for (let n = c + 1; n <= N; n++) {
     const prob = n <= 20 ? pn.find((x) => x.n === n)?.value ?? calcPn(n) : calcPn(n);
-    busyMean += Math.min(n, c) * prob;
+    Lq += (n - c) * prob;
   }
 
-  const Lq = Ls - busyMean;
+  const cBar = Ls - Lq;
   const Ws = lambdaEff > 0 ? Ls / lambdaEff : Infinity;
   const Wq = lambdaEff > 0 ? Lq / lambdaEff : Infinity;
-  const cBar = busyMean;
+
   if (lambdaEff < 1e-6) warnings.push("λeff is near zero; results may be numerically unstable.");
 
   function calcPn(n) {
@@ -807,6 +807,9 @@ function computeMminf({ lambda, mu }) {
 function computeMmrRepair({ lambda, mu, R, K }) {
   const warnings = [];
   const errors = [];
+  if (R > K) {
+    errors.push("Servers R must be ≤ population size K.");
+  }
   const rho = lambda / mu;
   const pnRaw = [];
   for (let n = 0; n <= K; n++) {
@@ -862,7 +865,6 @@ function computeMmrRepair({ lambda, mu, R, K }) {
  * @returns {Object} Computation results with metrics, warnings, and errors
  */
 function computeMg1Pk({ lambda, meanService, varService }) {
-  const warnings = ["pn uses geometric approximation because full service-time distribution is not provided."];
   const errors = [];
   const rho = lambda * meanService;
   if (rho >= 1) errors.push("System unstable (ρ ≥ 1).");
@@ -873,7 +875,10 @@ function computeMg1Pk({ lambda, meanService, varService }) {
     : (lambda ** 2 * varService + rho ** 2) / (2 * (1 - rho));
   const Wq = errors.length ? Infinity : Lq / lambda;
   const Ws = errors.length ? Infinity : Wq + meanService;
-  const Ls = errors.length ? Infinity : lambda * Ws;
+  // Pollaczek-Khintchine formula for L_s
+  const Ls = errors.length 
+    ? Infinity 
+    : rho + (lambda ** 2 * (meanService ** 2 + varService)) / (2 * (1 - rho));
   return {
     p0,
     pn,
@@ -906,15 +911,31 @@ function getFormula(metric, modelId) {
       if (m === "mm1_inf") return mml("p_0 = 1 - \\rho,\\; \\rho = \\lambda/\\mu < 1");
       if (m === "mm1_n") return mml("p_0 = \\frac{1-\\rho}{1-\\rho^{N+1}},\\; \\rho=\\lambda/\\mu");
       if (m === "mmc_inf") return mml("p_0 = \\left[\\sum_{n=0}^{c-1} \\frac{(\\lambda/\\mu)^n}{n!} + \\frac{(\\lambda/\\mu)^c}{c!(1-\\rho)}\\right]^{-1},\\; \\rho=\\lambda/(c\\mu)");
-      if (m === "mmc_n") return mml("p_0 = \\left[\\sum_{n=0}^{c-1} \\frac{(\\lambda/\\mu)^n}{n!} + \\sum_{n=c}^{N} \\frac{(\\lambda/\\mu)^n}{c!c^{n-c}}\\right]^{-1}");
+      if (m === "mmc_n")
+        return mml(
+          "p_0 = \\left[\\sum_{n=0}^{c-1} \\frac{(\\lambda/\\mu)^n}{n!} + \\frac{(\\lambda/\\mu)^c (1-(\\frac{\\lambda}{c\\mu})^{N-c+1})}{c!(1-\\frac{\\lambda}{c\\mu})}\\right]^{-1}"
+        );
       if (m === "mminf") return mml("p_0 = e^{-\\lambda/\\mu}");
       if (m === "mmr_repair") return mml("p_0 = \\left[ \\sum_{n=0}^{R} \\binom{K}{n}\\rho^n + \\sum_{n=R+1}^{K} \\binom{K}{n} \\frac{n!}{R!R^{n-R}} \\rho^n \\right]^{-1},\\; \\rho=\\lambda/\\mu");
       if (m === "mg1_pk") return mml("p_0 = 1-\\rho,\\; \\rho = \\lambda E\\{t\\}");
       break;
     case "pN":
+      if (m === "mm1_inf") return mml("p_n = p_0 \\rho^n,\\; \\rho = \\lambda/\\mu");
+      if (m === "mmc_inf")
+        return mml(
+          "p_n = \\begin{cases} \\frac{(\\lambda/\\mu)^n}{n!} p_0, & n \\le c \\\\ \\frac{(\\lambda/\\mu)^n}{c! c^{n-c}} p_0, & n > c \\end{cases}"
+        );
+      if (m === "mminf") return mml("p_n = \\frac{(\\lambda/\\mu)^n}{n!} e^{-\\lambda/\\mu}");
       if (m === "mm1_n") return mml("p_N = p_0 \\rho^N");
-      if (m === "mmc_n") return mml("p_N = p_0 \\frac{(\\lambda/\\mu)^N}{c! c^{N-c}}");
-      if (m === "mmr_repair") return mml("p_K = \\binom{K}{K} \\frac{K!}{R!R^{K-R}} \\rho^K p_0");
+      if (m === "mmc_n")
+        return mml(
+          "p_n = \\begin{cases} \\frac{(\\lambda/\\mu)^n}{n!} p_0, & n \\le c \\\\ \\frac{(\\lambda/\\mu)^n}{c! c^{n-c}} p_0, & N \\ge n > c \\end{cases}"
+        );
+      if (m === "mmr_repair")
+        return mml(
+          "p_n = \\begin{cases} \\binom{K}{n} \\rho^n p_0, & 0 \\le n \\le R \\\\ \\binom{K}{n} \\frac{n!}{R! R^{n-R}} \\rho^n p_0, & R < n \\le K \\end{cases},\\; \\rho = \\lambda/\\mu"
+        );
+      if (m === "mg1_pk") return mml("p_n = (\\lambda E\\{t\\})^n (1 - \\lambda E\\{t\\}),\\; n = 0,1,2,\\ldots");
       return mml("Not applicable (∞ capacity).");
     case "lambdaEff":
       if (m === "mm1_n" || m === "mmc_n") return mml("\\lambda_{eff} = \\lambda (1 - p_N)");
@@ -930,12 +951,15 @@ function getFormula(metric, modelId) {
       if (m === "mmc_n") return mml("L_s = \\sum_{n=0}^{N} n p_n");
       if (m === "mminf") return mml("L_s = \\lambda/\\mu");
       if (m === "mmr_repair") return mml("L_s = \\sum_{n=0}^{K} n p_n");
-      if (m === "mg1_pk") return mml("L_s = \\lambda W_s");
+      if (m === "mg1_pk") return mml("L_s = \\lambda E\\{t\\} + \\frac{\\lambda^2(E\\{t\\}^2 + Var\\{t\\})}{2(1-\\lambda E\\{t\\})}");
       break;
     case "Lq":
       if (m === "mm1_inf") return mml("L_q = \\frac{\\rho^2}{1-\\rho}");
       if (m === "mm1_n") return mml("L_q = L_s - (1 - p_0)");
-      if (m === "mmc_inf") return mml("L_q = \\frac{p_0 (\\lambda/\\mu)^c \\rho}{c!(1-\\rho)^2}");
+      if (m === "mmc_inf")
+        return mml(
+          "L_q = \\frac{\\lambda^{c+1}}{(c - \\lambda/\\mu)^2 (c-1)! \\mu^{c+1}} p_0"
+        );
       if (m === "mmc_n") return mml("L_q = L_s - \\sum_{n=0}^{c} n p_n - \\sum_{n=c+1}^{N} c p_n + c p_c");
       if (m === "mminf") return mml("L_q = 0");
       if (m === "mmr_repair") return mml("L_q = \\sum_{n=R+1}^{K} (n-R) p_n");
@@ -963,7 +987,7 @@ function getFormula(metric, modelId) {
       if (m === "mm1_inf") return mml("\\bar{c} = \\rho");
       if (m === "mm1_n") return mml("\\bar{c} = 1 - p_0");
       if (m === "mmc_inf") return mml("\\bar{c} = \\lambda/\\mu");
-      if (m === "mmc_n") return mml("\\bar{c} = \\sum_{n=0}^{N} \\min(n,c) p_n");
+      if (m === "mmc_n") return mml("\\bar{c} = L_s - L_q");
       if (m === "mminf") return mml("\\bar{c} = \\lambda/\\mu");
       if (m === "mmr_repair") return mml("\\bar{c} = \\sum_{n=0}^{K} \\min(n,R) p_n");
       if (m === "mg1_pk") return mml("\\bar{c} = \\rho");
