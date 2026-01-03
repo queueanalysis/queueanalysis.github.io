@@ -533,9 +533,11 @@ function combination(n, k) {
  * @returns {Array<Object>} Array of {n, value} objects
  */
 function computePnGeometric(p0, rho, maxN = 20) {
+  const safeP0 = Math.max(0, p0);
+  if (!Number.isFinite(safeP0) || !Number.isFinite(rho)) return [];
   const pn = [];
   for (let n = 0; n <= maxN; n++) {
-    pn.push({ n, value: p0 * rho ** n });
+    pn.push({ n, value: safeP0 * rho ** n });
   }
   return pn;
 }
@@ -551,18 +553,18 @@ function computeMm1Infinite({ lambda, mu }) {
   const rho = lambda / mu;
   const errors = [];
   const warnings = [];
-  if (rho >= 1) {
+  const stable = rho < 1;
+  if (!stable) {
     errors.push("System unstable (ρ ≥ 1). Metrics diverge.");
   }
-  const p0 = 1 - rho;
-  const pn = computePnGeometric(Math.max(p0, 0), rho);
-  const stable = rho < 1;
+  const p0 = stable ? 1 - rho : null;
+  const pn = stable ? computePnGeometric(p0, rho) : [];
   const Lq = stable ? (rho ** 2) / (1 - rho) : Infinity;
   const Ls = stable ? rho / (1 - rho) : Infinity;
   const lambdaEff = lambda;
   const Ws = stable ? 1 / (mu - lambda) : Infinity;
   const Wq = stable ? lambda / (mu * (mu - lambda)) : Infinity;
-  const cBar = rho;
+  const cBar = stable ? rho : Infinity;
   return {
     p0,
     pn,
@@ -647,8 +649,23 @@ function computeMmcInfinite({ lambda, mu, c }) {
   const rho = lambda / (c * mu);
   const errors = [];
   const warnings = [];
-  if (rho >= 1) {
+  const stable = rho < 1;
+  if (!stable) {
     errors.push("System unstable (ρ ≥ 1). Metrics diverge.");
+    return {
+      p0: null,
+      pn: [],
+      pN: null,
+      lambdaEff: lambda,
+      lambdaLost: 0,
+      Ls: Infinity,
+      Lq: Infinity,
+      Ws: Infinity,
+      Wq: Infinity,
+      cBar: Infinity,
+      warnings,
+      errors
+    };
   }
   let sum = 0;
   for (let n = 0; n < c; n++) sum += a ** n / factorial(n);
